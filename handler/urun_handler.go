@@ -1,7 +1,5 @@
 package handler
 
-
-
 import (
 	"deneme/models"
 	"deneme/service"
@@ -12,14 +10,17 @@ import (
 	_ "github.com/gin-gonic/gin"
 )
 
+// UrunHandler, ürünlerle ilgili HTTP isteklerini yönetir.
 type UrunHandler struct {
 	service *service.UrunService
 }
 
+// NewUrunHandler, yeni bir UrunHandler örneği oluşturur.
 func NewUrunHandler(s *service.UrunService) *UrunHandler {
 	return &UrunHandler{service: s}
 }
 
+// GetUrunler, tüm ürünleri listeler.
 func (h *UrunHandler) GetUrunler(c *gin.Context) {
 	urunler, err := h.service.GetAllUrunler()
 	if err != nil {
@@ -29,6 +30,7 @@ func (h *UrunHandler) GetUrunler(c *gin.Context) {
 	c.JSON(http.StatusOK, urunler)
 }
 
+// CreateUrun, yeni bir ürün oluşturur.
 func (h *UrunHandler) CreateUrun(c *gin.Context) {
 	var urun models.Urun
 	if err := c.BindJSON(&urun); err != nil {
@@ -40,9 +42,11 @@ func (h *UrunHandler) CreateUrun(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ürün oluşturulamadı"})
 		return
 	}
-	urun.ID = int(id) 
+	urun.ID = int(id)
 	c.JSON(http.StatusCreated, urun)
 }
+
+// UpdateUrun, mevcut bir ürünü günceller.
 func (h *UrunHandler) UpdateUrun(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	var urun models.Urun
@@ -60,6 +64,7 @@ func (h *UrunHandler) UpdateUrun(c *gin.Context) {
 	c.JSON(http.StatusOK, urun)
 }
 
+// DeleteUrun, bir ürünü siler.
 func (h *UrunHandler) DeleteUrun(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 

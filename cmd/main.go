@@ -1,3 +1,4 @@
+// Package main, API uygulamasının giriş noktasıdır.
 package main
 
 import (
@@ -5,20 +6,47 @@ import (
 	"deneme/handler"
 	"deneme/repository"
 	"deneme/service"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	db, err := sql.Open("mysql", "root:1_Kaankaan@tcp(127.0.0.1:3306)/magazadb")
+	// .env dosyasını yükle
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Hata: .env dosyası yüklenemedi. Lütfen .env dosyasını oluşturun:", err)
+	}
+
+	// Environment variables'dan veritabanı bilgilerini al
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+
+	// Eksik environment variable kontrolü
+	if dbUser == "" || dbPassword == "" || dbHost == "" || dbPort == "" || dbName == "" {
+		log.Fatal("Hata: Gerekli environment variables eksik. Lütfen .env dosyasını kontrol edin.")
+	}
+
+	// Veritabanı bağlantı string'ini oluştur
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Fatal("Veritabanı bağlantı hatası:", err)
 	}
 	defer db.Close()
+
+	// Veritabanı bağlantısını test et
+	if err := db.Ping(); err != nil {
+		log.Fatal("Veritabanı bağlantı testi başarısız:", err)
+	}
 
 	urunRepo := repository.NewMySQLUrunRepository(db)
 	urunService := service.NewUrunService(urunRepo)
@@ -42,6 +70,12 @@ func main() {
 	r.PUT("/api/urunler/:id", urunHandler.UpdateUrun)
 	r.DELETE("/api/urunler/:id", urunHandler.DeleteUrun)
 
-	log.Println("Sunucu 8080 portunda başlatıldı.")
-	r.Run(":8080")
+	// Port bilgisini environment variable'dan al
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "8080" // Varsayılan port
+	}
+
+	log.Printf("Sunucu %s portunda başlatıldı.", port)
+	r.Run(":" + port)
 }
